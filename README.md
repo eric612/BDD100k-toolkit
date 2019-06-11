@@ -10,6 +10,7 @@ anno_sets = ["bdd100k_labels_images_det_coco_train", "bdd100k_labels_images_det_
 anno_dir = "{}/json".format(coco_data_dir) //step1 folder
 ```
 3. Use coco2voc.py to convert step2 files format to pascal voc , the file tree will like below 
+
 ![alt](example.png)
 
 4. 
