@@ -9,7 +9,7 @@ Convert bdd100k dataset to lmdb , for train [object detection + segmentation mod
     anno_sets = ["bdd100k_labels_images_det_coco_train", "bdd100k_labels_images_det_coco_val"] // step1 files
     anno_dir = "{}/json".format(coco_data_dir) //step1 folder
     ```
-    The generated train and val will save at $bdd100k/bdd100k/ImageSets
+    The generated train and val list will save at $bdd100k/bdd100k/ImageSets
 3. Use coco2voc.py to convert step2 files format to pascal voc , the file tree will like below 
 
 ![alt](example.png)
