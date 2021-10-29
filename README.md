@@ -8,8 +8,8 @@ Convert bdd100k annotation to Coco or VOC format , also support driverable area
 'bdd100k_images.zip'
 'bdd100k_labels_release.zip' 
 ```
-2.  
+2. Do batch_split_annotation 
 ```
 python batch_split_annotation.py
 ```
-The generated train and val list will save at $bdd100k/ImageSets
+3. The generated train and val list will save at $bdd100k/ImageSets
