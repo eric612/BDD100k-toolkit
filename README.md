@@ -12,4 +12,4 @@ Convert bdd100k annotation to Coco or VOC format , also support driverable area
 ```
 python batch_split_annotation.py
 ```
-3. The generated train and val list will save at $bdd100k/ImageSets
+3. The output yaml file will save at $bdd100k/bdd100k.yaml , which can be used in my project [Mobilenet-YOLO-Pytorch](https://github.com/eric612/Mobilenet-YOLO-Pytorch) 
