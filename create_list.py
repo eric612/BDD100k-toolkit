@@ -9,8 +9,48 @@ import openpyxl
 import numpy
 import sys
 from openpyxl import Workbook
-
-
+import xlsx_graph
+import darknet_file_generator
+classes = ["person", "rider", "car", "bus", "truck" , "bike" , "motor" ]
+def remove_annotations(image_id):
+    in_file = open('Annotations//%s'%(image_id))
+    
+    tree=ET.parse(in_file)
+    root = tree.getroot()
+    #size = root.find('size')
+    #w = int(size.find('width').text)
+    #h = int(size.find('height').text)
+    remove_obj_list = list()
+    #print(w,h)
+    for obj in root.iter('object'):
+        #difficult = obj.find('difficult').text
+        cls = obj.find('name').text
+        xmlbox = obj.find('bndbox')
+        b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text), float(xmlbox.find('ymin').text), float(xmlbox.find('ymax').text))  
+        #print(b)
+        if cls not in classes :
+            #print(cls)
+            remove_obj_list.append(obj)
+        else:
+            continue
+            #if cls == "motor":
+            #    cls = "bike"
+            #if cls == "rider":
+            #    cls = "bike" 
+            #if cls == "truck":
+            #    cls = "bus"                 
+            #cls_id = classes2.index(cls)
+            #obj.find('name').text = cls
+    in_file.close()
+    for obj in remove_obj_list : 
+        root.remove(obj)
+    #if len(remove_obj_list) > 0 :
+    #    out_file = open('Annotations/%s'%(image_id),'w')
+    #    tree.write(out_file)
+    #    out_file.close()
+    out_file = open('Annotations//%s'%(image_id),'wb+')
+    tree.write(out_file)
+    out_file.close()
 def collect_data(path,list_name) :
 
     im_names = list()
@@ -34,11 +74,12 @@ def collect_data(path,list_name) :
     xml_paths = list()
     png_paths = list()
     count = 0
+    
     for root, dirs, files in os.walk(path):
         for filename in files:
             if filename.endswith(('.jpg')) :
                 filepath = os.path.join(root,filename)
-                copyfile(filepath,jpg_path+filename.replace(' ', ''))   
+                #copyfile(filepath,jpg_path+filename.replace(' ', ''))   
                 filepath = jpg_path+filename.replace(' ', '')
                 jpg_paths.append(os.path.join(cwd,filepath))
                 #print(os.path.join(cwd,filepath))
@@ -46,11 +87,11 @@ def collect_data(path,list_name) :
                 #if filename[0:len(filename)-4] in test_fixed :
                 #    copyfile(filepath,jpg_path2+filename.replace(' ', ''))  
                 #    print(filename[0:len(filename)-4])
-            if filename.endswith(('.png')) :
-                filepath = os.path.join(root,filename)
-                copyfile(filepath,png_path+filename.replace('seg_', '').replace(' ', ''))   
-                filepath = png_path+filename.replace('seg_', '').replace(' ', '')
-                png_paths.append(os.path.join(cwd,filepath))
+            #if filename.endswith(('.png')) :
+            #    filepath = os.path.join(root,filename)
+            #    copyfile(filepath,png_path+filename.replace('seg_', '').replace(' ', ''))   
+            #    filepath = png_path+filename.replace('seg_', '').replace(' ', '')
+            #    png_paths.append(os.path.join(cwd,filepath))
                 #print(os.path.join(cwd,filepath))
                 #print(filename[0:len(filename)-4])
                 #if filename[0:len(filename)-4] in test_fixed :
@@ -60,6 +101,7 @@ def collect_data(path,list_name) :
                 filepath = os.path.join(root,filename)
                 newFilename = filename.replace(' ', '')
                 copyfile(filepath,xml_path+newFilename)
+                remove_annotations(newFilename)
                 #print(filename[0:len(filename)-4])
                 #print("renaming " + xml_path+filename.replace(' ', ''))
                 xml_names.append(os.path.splitext(filename.replace(' ', ''))[0])
