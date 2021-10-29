@@ -3,6 +3,7 @@ import subprocess
 import sys
 import zipfile
 import shutil
+import yaml
 HOMEDIR = os.path.expanduser("/media/eric")
 CURDIR = os.path.dirname(os.path.realpath(__file__))
 python_cmd = "python3"
@@ -32,76 +33,102 @@ zip_files = [bdd100k_drivable_map_file,bdd100k_images_file,bdd100k_labels_releas
 bdd100k_label_filepath = '{}/bdd100k/labels/'.format(coco_data_dir)
 
 def batch_split_annotation():
-    
-    for file in zip_files:
-        if os.path.isfile(file):
-            print('unzip ... ' , file)
-            with zipfile.ZipFile(file, 'r') as zip_ref:
-                zip_ref.extractall(CURDIR)
-        else:
-          print('not find {}'.format(file))   
-    
-    if not os.path.isdir(anno_dir):
-        os.mkdir(anno_dir)    
-    cmd = "{} {}/bdd2coco.py -l={} -s={}" \
-            .format(python_cmd,CURDIR, bdd100k_label_filepath, anno_dir)
-    print (cmd)
-    process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-    output = process.communicate()[0]
-    print (output)            
-    
-    ### Process each set ###
-    for i in range(0, len(anno_sets)):
-        anno_set = anno_sets[i]
-        anno_file = "{}/{}.json".format(anno_dir, anno_set)
+    if not os.path.exists('template.yaml'):
+        print('not find template.yaml')
+        return
+    with open('template.yaml', 'r') as f:
+        bdd100k_yaml = yaml.load(f, Loader=yaml.Loader)
 
-        if not os.path.exists(anno_file):
-            print ("{} does not exist".format(anno_file))
-            continue
-        anno_name = anno_set.split("_")[-1]
-        out_dir = "{}/{}".format(out_anno_dir, anno_name)
-        imgset_file = "{}/{}.txt".format(imgset_dir, anno_name)
-        if redo or not os.path.exists(out_dir):
-            cmd = "{} {}/split_annotation.py --out-dir={} --imgset-file={} {}" \
-                    .format(python_cmd,CURDIR, out_dir, imgset_file, anno_file)
-            print (cmd)
-            process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            print (output)
-            
-    if do_coco2voc:
+        
+        for file in zip_files:
+            if os.path.isfile(file):
+                print('unzip ... ' , file)
+                with zipfile.ZipFile(file, 'r') as zip_ref:
+                    zip_ref.extractall(CURDIR)
+            else:
+              print('not find {}'.format(file))   
+        
+        if not os.path.isdir(anno_dir):
+            os.mkdir(anno_dir)    
+        cmd = "{} {}/bdd2coco.py -l={} -s={}" \
+                .format(python_cmd,CURDIR, bdd100k_label_filepath, anno_dir)
+        print (cmd)
+        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        output = process.communicate()[0]
+        print (output)            
+        
+        ### Process each set ###
         for i in range(0, len(anno_sets)):
             anno_set = anno_sets[i]
+            anno_file = "{}/{}.json".format(anno_dir, anno_set)
+
+            if not os.path.exists(anno_file):
+                print ("{} does not exist".format(anno_file))
+                continue
             anno_name = anno_set.split("_")[-1]
-            input_dir = "{}/{}".format(out_anno_dir, anno_name)
-            save_dir = "{}/xml/{}".format(coco_data_dir, anno_name)
-            #print(anno_name,out_dir)
-            cmd = "{} {}/coco2voc.py --input_dir={} --save_path={}" \
-                    .format(python_cmd,CURDIR,input_dir,save_dir)
-            print (cmd)
-            process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-            output = process.communicate()[0]
-            print (output)
+            out_dir = "{}/{}".format(out_anno_dir, anno_name)
+            imgset_file = "{}/{}.txt".format(imgset_dir, anno_name)
+            if anno_name in "train":
+                bdd100k_yaml["trainval_dataset_path"]["annos"].append(out_dir)
+            if anno_name in ["test","val"]:
+                bdd100k_yaml["test_dataset_path"]["annos"].append(out_dir)
+            if redo or not os.path.exists(out_dir):
+                cmd = "{} {}/split_annotation.py --out-dir={} --imgset-file={} {}" \
+                        .format(python_cmd,CURDIR, out_dir, imgset_file, anno_file)
+                print (cmd)
+                process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+                output = process.communicate()[0]
+                print (output)
+                
+        if do_coco2voc:
+            for i in range(0, len(anno_sets)):
+                anno_set = anno_sets[i]
+                anno_name = anno_set.split("_")[-1]
+                input_dir = "{}/{}".format(out_anno_dir, anno_name)
+                save_dir = "{}/xml/{}".format(coco_data_dir, anno_name)
+                #print(anno_name,out_dir)
+                cmd = "{} {}/coco2voc.py --input_dir={} --save_path={}" \
+                        .format(python_cmd,CURDIR,input_dir,save_dir)
+                print (cmd)
+                process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+                output = process.communicate()[0]
+                print (output)
 
-    
+        
 
-    
-    original = '{}/bdd100k/drivable_maps'.format(CURDIR)
-    target = '{}/drivable_maps'.format(CURDIR)
-    #print(original,target)
-    shutil.move(original,target)
-    
-    original = '{}/bdd100k/images/100k/train'.format(CURDIR)
-    target = '{}/images/train'.format(CURDIR)
-    shutil.move(original,target)
+        
+        original = '{}/bdd100k/drivable_maps'.format(CURDIR)
+        target = '{}/drivable_maps'.format(CURDIR)
+      
+        shutil.move(original,target)
+        target = '{}/drivable_maps/labels/train/'.format(CURDIR)
+        bdd100k_yaml["trainval_dataset_path"]["segs"].append(target)
+        target = '{}/drivable_maps/labels/val/'.format(CURDIR)
+        bdd100k_yaml["test_dataset_path"]["segs"].append(target)
+        
+        original = '{}/bdd100k/images/100k/train'.format(CURDIR)
+        target = '{}/images/train'.format(CURDIR)
+        bdd100k_yaml["trainval_dataset_path"]["imgs"].append(target)
+        shutil.move(original,target)
 
-    original = '{}/bdd100k/images/100k/val'.format(CURDIR)
-    target = '{}/images/val'.format(CURDIR)
-    shutil.move(original,target)
-    
-    original = '{}/bdd100k/'.format(CURDIR)
-    shutil.rmtree(original)
-
+        original = '{}/bdd100k/images/100k/val'.format(CURDIR)
+        target = '{}/images/val'.format(CURDIR)
+        bdd100k_yaml["test_dataset_path"]["imgs"].append(target)
+        shutil.move(original,target)
+        
+        target = '{}/ImageSets/train.txt'.format(CURDIR)
+        bdd100k_yaml["trainval_dataset_path"]["lists"].append(target)
+        
+        target = '{}/ImageSets/val.txt'.format(CURDIR)
+        bdd100k_yaml["test_dataset_path"]["lists"].append(target)
+        
+        rm_list = ['bdd100k','json']
+        for l in rm_list:
+            original = '{}/{}/'.format(CURDIR,l)
+            shutil.rmtree(original)
+        
+        with open('bdd100k.yaml', 'w') as dest:
+            yaml.dump(bdd100k_yaml,dest)    
 
 
 if __name__ == '__main__':

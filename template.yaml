@@ -1,0 +1,25 @@
+test_dataset_path:
+  annos: []
+  imgs: []
+  lists: []
+  segs: []
+  lmdb: bdd100k-test-lmdb
+  name: bdd100k_test
+trainval_dataset_path:
+  annos: []
+  imgs: []
+  lists: []
+  segs: []
+  lmdb: bdd100k-train-lmdb
+  name: bdd100k_train
+segmentation_enable: true
+segmentation_num_classes: 2
+segmentation_anno_keywords: "id"
+classes:
+  original: ["person","rider", "car","bus","truck","bike","motor","traffic light","traffic sign","train"]
+  map: ["person","rider", "car","bus","truck","bike","motor"]
+extention_names:
+    image: ["jpg"]
+    annotation: ["json"]
+    segmentation: ["png"]
+model_config_path: "models/bdd100k/config.yaml"
