@@ -20,7 +20,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     annofile = args.annofile
     if not os.path.exists(annofile):
-        print "{} does not exist!".format(annofile)
+        print ("{} does not exist!".format(annofile))
         sys.exit()
 
     out_dir = args.out_dir
