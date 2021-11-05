@@ -4,10 +4,13 @@ import sys
 import zipfile
 import shutil
 import yaml
+import json
+from split_attributes import split_attributes
 HOMEDIR = os.path.expanduser("/media/eric")
 CURDIR = os.path.dirname(os.path.realpath(__file__))
 python_cmd = "python3"
 do_coco2voc = True
+do_split_attributes = True
 ### Modify the address and parameters accordingly ###
 # If true, redo the whole thing.
 redo = True
@@ -31,8 +34,11 @@ bdd100k_images_file = '{}/bdd100k_images.zip'.format(CURDIR)
 bdd100k_labels_release_file = '{}/bdd100k_labels_release.zip'.format(CURDIR)
 zip_files = [bdd100k_drivable_map_file,bdd100k_images_file,bdd100k_labels_release_file]
 bdd100k_label_filepath = '{}/bdd100k/labels/'.format(coco_data_dir)
+labels_images = ['bdd100k_labels_images_train.json','bdd100k_labels_images_val.json']
 
 def batch_split_annotation():
+    
+    
     if not os.path.exists('template.yaml'):
         print('not find template.yaml')
         return
@@ -49,7 +55,9 @@ def batch_split_annotation():
               print('not find {}'.format(file))   
         
         if not os.path.isdir(anno_dir):
-            os.mkdir(anno_dir)    
+            os.mkdir(anno_dir)
+        if do_split_attributes:
+            split_attributes(labels_images,bdd100k_label_filepath)
         cmd = "{} {}/bdd2coco.py -l={} -s={}" \
                 .format(python_cmd,CURDIR, bdd100k_label_filepath, anno_dir)
         print (cmd)
@@ -129,7 +137,7 @@ def batch_split_annotation():
         
         with open('bdd100k.yaml', 'w') as dest:
             yaml.dump(bdd100k_yaml,dest)    
-
+    
 
 if __name__ == '__main__':
     batch_split_annotation()
