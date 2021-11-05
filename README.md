@@ -22,3 +22,4 @@ python batch_split_annotation.py
 ```
 show_images.sh
 ```
+![result](/result.jpg)

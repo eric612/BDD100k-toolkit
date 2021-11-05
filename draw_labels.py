@@ -89,53 +89,25 @@ def parse_annotation(annotation_path):
                 difficulties.append(0)
                 #print(xmin,ymin,class_id)
         return boxes, labels, difficulties   
-def draw_image(cv_img,laneTypes=None,laneDirection=None,lane=None,boxes=None,labels=None,seg_id = False,attributes = False,lane_color_map = False): 
-    #print(seg_id)
-    #seg_id = (np.asarray(seg_id)!=0)*0.5
+def draw_image(cv_img,laneTypes=None,laneDirection=None,lane=None,boxes=None,labels=None,seg_id = None,attributes = None,lane_color_map = None): 
+    
+    if attributes!=None:
+        cv_img[:,:,2] = (seg_id[:,:,2]==1)*127 + cv_img[:,:,2]*(seg_id[:,:,2]==0) + cv_img[:,:,2]*(seg_id[:,:,2]==1)*0.5
+        cv_img[:,:,0] = (seg_id[:,:,0]==2)*127 + cv_img[:,:,0]*(seg_id[:,:,0]==0) + cv_img[:,:,0]*(seg_id[:,:,0]==2)*0.5
 
-    #cv_img = cv_img*seg_id 
-    cv_img[:,:,2] = (seg_id[:,:,2]==1)*127 + cv_img[:,:,2]*(seg_id[:,:,2]==0) + cv_img[:,:,2]*(seg_id[:,:,2]==1)*0.5
-    #cv_img[:,:,1] = cv_img[:,:,1]*(seg_id[:,:,1]==0) + cv_img[:,:,1]*(seg_id[:,:,1]==1)*0.5
-    #cv_img[:,:,0] = cv_img[:,:,0]*(seg_id[:,:,0]==0) + cv_img[:,:,0]*(seg_id[:,:,0]==1)*0.5
-    cv_img[:,:,0] = (seg_id[:,:,0]==2)*127 + cv_img[:,:,0]*(seg_id[:,:,0]==0) + cv_img[:,:,0]*(seg_id[:,:,0]==2)*0.5
-    #cv_img[:,:,1] = cv_img[:,:,1]*(seg_id[:,:,1]==0) + cv_img[:,:,1]*(seg_id[:,:,1]==2)*0.5
-    #cv_img[:,:,2] = cv_img[:,:,2]*(seg_id[:,:,2]==0) + cv_img[:,:,2]*(seg_id[:,:,2]==2)*0.5
-    mask = (lane_color_map!=0)
-    cv_img[mask] = lane_color_map[mask]
+        mask = (lane_color_map!=0)
+        cv_img[mask] = lane_color_map[mask]
+        
     for idx,box in enumerate(boxes) : 
         cv2.rectangle(cv_img, (box[0],box[1]), (box[2],box[3]), (0,255,0), 2)
         text=CLASSES[int(labels[idx])].lower()
-        cv2.putText(cv_img, text, (box[0],box[1]-5), cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 255), 1, cv2.LINE_AA)
-    #print(attributes["weather"])
-    '''
-    for line,laneD in zip(lane,laneDirection): 
-        #print(line)
-        color = color_array[lane_Direction.index(laneD)]
-        #cv2.polylines(cv_img, line, False, color, 2);      
-        
-        for idx,pt in enumerate(line):
-            if idx==0:
-                x1,y1 = line[0]
-                continue            
-            x2,y2 = line[idx]
-            cv2.line(cv_img, (int(x1),int(y1)), (int(x2),int(y2)), color, 2)    
-            x1 = x2
-            y1 = y2
-    '''    
-        
-    cv2.putText(cv_img, 'weather : '+str(attributes["weather"]), (10,680), cv2.FONT_HERSHEY_SIMPLEX,1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(cv_img, 'scene : '+str(attributes["scene"]), (350,680), cv2.FONT_HERSHEY_SIMPLEX,1, (0, 255, 0), 2, cv2.LINE_AA)
-    cv2.putText(cv_img, 'timeofday : '+str(attributes["timeofday"]), (700,680), cv2.FONT_HERSHEY_SIMPLEX,1, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(cv_img, text, (box[0],box[1]-5), cv2.FONT_HERSHEY_SIMPLEX,0.5, (0, 255, 255), 1, cv2.LINE_AA)   
+    if attributes!=None:
+        cv2.putText(cv_img, 'weather : '+str(attributes["weather"]), (10,680), cv2.FONT_HERSHEY_SIMPLEX,1, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(cv_img, 'scene : '+str(attributes["scene"]), (350,680), cv2.FONT_HERSHEY_SIMPLEX,1, (0, 255, 0), 2, cv2.LINE_AA)
+        cv2.putText(cv_img, 'timeofday : '+str(attributes["timeofday"]), (700,680), cv2.FONT_HERSHEY_SIMPLEX,1, (0, 255, 0), 2, cv2.LINE_AA)
     return cv_img
-    '''
-    if laneTypes is not None:
-        if 'road curb' in LaneCategories:
-            color = color_array[0]
-        else:
-            color = color_array[1]
-    else:
-        color = color_array[0]
-    '''
+
 def parse_lane_label(lane_label_path):    
     filename, file_extension = os.path.splitext(lane_label_path)
     lane_label = list()
@@ -164,25 +136,26 @@ def parse_attributes(attributes_path):
     return data
 def show_images(set_names,filepath):
     lists = parse_file_lists(set_names,filepath)
-    
-    #print(lists["id"][idx],lists["image"][idx],lists["anno"][idx],lists["lane_label"][idx])
-    #original_image = Image.open(lists["image"][0], mode='r')
-    #original_image = original_image.convert('RGB')
-    #annotated_image_ = cv2.cvtColor(np.asarray(original_image), cv2.COLOR_RGB2BGR)
+
     for idx in range(len(lists["image"])):
         annotated_image = cv2.imread(lists["image"][idx])
         height,width = annotated_image.shape[0],annotated_image.shape[1]
         boxes, labels, difficulties = parse_annotation(lists["anno"][idx])
         lane,laneTypes,laneDirection = parse_lane_label(lists["lane_label"][idx])
-        attr = parse_attributes(lists["attr"][idx])
-        #print(lists["lane_color"][idx])
-        d_map = cv2.imread(lists["drivable_map"][idx])
-        lane_color_map = cv2.imread(lists["lane_color"][idx])
+        attr = None
+        d_map = None
+        lane_color_map = None
+        if len(lists["attr"])>0:
+            attr = parse_attributes(lists["attr"][idx])
+            #print(lists["lane_color"][idx])
+            d_map = cv2.imread(lists["drivable_map"][idx])
+            lane_color_map = cv2.imread(lists["lane_color"][idx])
         annotated_image = draw_image(annotated_image,laneTypes,laneDirection,lane,boxes,labels,seg_id=d_map,attributes=attr,lane_color_map = lane_color_map)
         #print(boxes)
         cv2.namedWindow('frame',cv2.WINDOW_NORMAL)
         cv2.resizeWindow('frame', width, height)
         cv2.imshow('frame',annotated_image)
+        cv2.imwrite('result.jpg',annotated_image)
         if cv2.waitKey(0) & 0xFF == ord('q'):
             break
     return
