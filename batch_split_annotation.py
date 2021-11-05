@@ -4,11 +4,13 @@ import sys
 import zipfile
 import shutil
 import yaml
+import json
 from split_attributes import split_attributes
 HOMEDIR = os.path.expanduser("/media/eric")
 CURDIR = os.path.dirname(os.path.realpath(__file__))
 python_cmd = "python3"
 do_coco2voc = True
+do_split_attributes = True
 ### Modify the address and parameters accordingly ###
 # If true, redo the whole thing.
 redo = True
@@ -135,7 +137,7 @@ def batch_split_annotation():
         
         with open('bdd100k.yaml', 'w') as dest:
             yaml.dump(bdd100k_yaml,dest)    
-
+    
 
 if __name__ == '__main__':
     batch_split_annotation()
